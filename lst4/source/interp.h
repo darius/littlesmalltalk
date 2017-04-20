@@ -112,7 +112,7 @@ int execute(struct object *aProcess, int ticks);
 		* temp size
 */
 
-# define methodSize 7
+# define methodSize 8
 # define nameInMethod 0
 # define byteCodesInMethod 1
 # define literalsInMethod 2
@@ -120,6 +120,7 @@ int execute(struct object *aProcess, int ticks);
 # define temporarySizeInMethod 4
 # define classInMethod 5
 # define textInMethod 6
+# define callCountInMethod 7
 
 /*
 	A Class has:

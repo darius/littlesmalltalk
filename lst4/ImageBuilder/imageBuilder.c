@@ -1230,6 +1230,7 @@ parseMethod(struct object * theMethod)
 		theMethod->data[temporarySizeInMethod] = newInteger(maxTemp);
 		theMethod->data[classInMethod] = currentClass;
 		theMethod->data[textInMethod] = newString(inputBuffer);
+		theMethod->data[callCountInMethod] = newInteger(0);
 		return 1;
 	}
 	return 0;
@@ -1252,16 +1253,16 @@ BeginCommand(void)
 	currentClass = 0;
 	tempTop = 0; maxTemp = 0;
 
-	if (!parseBody()) {
-		parseError("building begin method");
-	}
+	if (!parseBody()) parseError("building begin method");
 	printf("parsed begin command ok\n");
-        bootMethod = gcalloc(methodSize);
-        bootMethod->class = lookupGlobal("Method", 0);
-        bootMethod->data[nameInMethod] = newSymbol("boot");
-        bootMethod->data[literalsInMethod] = buildLiteralArray();
-        bootMethod->data[byteCodesInMethod] = buildByteArray();
-        bootMethod->data[stackSizeInMethod] = newInteger(12);
+	bootMethod = gcalloc(methodSize);
+	bootMethod->class = lookupGlobal("Method", 0);
+	bootMethod->data[nameInMethod] = newSymbol("boot");
+	bootMethod->data[literalsInMethod] = buildLiteralArray();
+	bootMethod->data[byteCodesInMethod] = buildByteArray();
+	bootMethod->data[stackSizeInMethod] = newInteger(12);
+	bootMethod->data[callCountInMethod] = newInteger(0);
+
 	return bootMethod;
 }
 

@@ -23,7 +23,7 @@ CLASS False         Boolean
 CLASS Process       Object context state result
 CLASS Context       Object method arguments temporaries stack bytePointer stackTop previousContext
 CLASS Block         Context argumentLocation creatingContext oldBytePointer
-CLASS Method        Object name byteCodes literals stackSize temporarySize class text
+CLASS Method        Object name byteCodes literals stackSize temporarySize class text callCount
 CLASS Magnitude     Object
 RAWCLASS MetaSymbol    Class         MetaMagnitude     symbols
 RAWCLASS Symbol        MetaSymbol    Magnitude
@@ -71,7 +71,8 @@ METHOD MetaObject
 in: object at: index put: value
 	" change data field in object, used during initialization "
 	" returns the intialized object "
-	<5 value object index>
+	<5 value object index>.
+	self primitiveFailed
 !
 METHOD Object
 in: object at: index
@@ -666,6 +667,7 @@ name: n byteCodes: b literals: l stackSize: s temporarySize: ts class: c text: t
 	super in: newMethod at: 5 put: ts.
 	super in: newMethod at: 6 put: c.
 	super in: newMethod at: 7 put: t.
+	super in: newMethod at: 8 put: 0.
 	^ newMethod
 !
 METHOD MetaMethod
@@ -696,6 +698,10 @@ stackSize
 METHOD Method
 temporarySize
 	^temporarySize
+!
+METHOD Method
+callCount
+	^callCount
 !
 METHOD Method
 args: argNames inst: instNames temp: tempNames

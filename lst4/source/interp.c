@@ -630,6 +630,11 @@ checkCache:
 	    context->data[bytePointerInContext] = newInteger(0);
 	    bytePointer = 0;
 	    bp = (unsigned char *) method->data[byteCodesInMethod]->data;
+            {
+                struct object *p = method->data[callCountInMethod];
+                if (!IS_SMALLINT(p)) sysError("non-integer callCount in method", 0);
+                method->data[callCountInMethod] = newInteger(integerValue(p)+1); // XXX overflow check
+            }
 		    /* now go execute new method */
 	    break;
 
