@@ -1472,6 +1472,20 @@ select: testBlock | newList |
 		ifTrue: [ newList add: element ] ].
 	^ newList
 !
+METHOD List
+joinStrings | length result i |
+        length <- 0.
+        self do: [:string | length <- length + string size].
+        result <- String new: length.
+        i <- 1.
+        self do: [:string |
+		string do: [:ch | 
+			result at: i put: ch.
+	                i <- i + 1
+	        ]
+        ].
+	^ result
+!
 COMMENT ---------- Dictionary ------------
 METHOD MetaDictionary
 new | newDict |
@@ -2394,15 +2408,16 @@ fileIn		| cmd |
 	]
 !
 METHOD File
-methodCommand: classCmd | name aClass text line |
+methodCommand: classCmd | name aClass text line lines |
 	name <- self readLine asSymbol.
 	aClass <- globals at: name ifAbsent: [ ^ self error:
 		'unknown class name in file-in: ' + name printString ].
-	text <- ''.
+	lines <- List new.
 	[ line <- self readLine.
 	  line isNil ifTrue: [ ^ self error:
 		'unexpected end of input during fileIn' ].
-	  line ~= '!'] whileTrue: [ text <- text + line + String newline ].
+	  line ~= '!'] whileTrue: [ lines add: (line + String newline) ].
+	text <- lines reverse joinStrings.
 	classCmd
 		ifTrue: [ aClass addMethod: text ]
 		ifFalse: [ aClass class addMethod: text ]
