@@ -4,7 +4,7 @@
 #
 
 CC=gcc
-CFLAGS=-g -Wall
+CFLAGS=-g -Wall -O2 -fno-strict-aliasing
 LIBS=
 
 default:

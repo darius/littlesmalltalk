@@ -37,6 +37,7 @@ CLASS OrderedArray  Array
 CLASS ByteArray     Array
 CLASS MetaString    Class         MetaArray
 CLASS String        Array
+CLASS FlexArray     Collection          buffer size
 CLASS Set	    Collection		members growth
 CLASS IdentitySet   Set
 CLASS Number        Magnitude
@@ -1472,20 +1473,6 @@ select: testBlock | newList |
 		ifTrue: [ newList add: element ] ].
 	^ newList
 !
-METHOD List
-joinStrings | length result i |
-        length <- 0.
-        self do: [:string | length <- length + string size].
-        result <- String new: length.
-        i <- 1.
-        self do: [:string |
-		string do: [:ch | 
-			result at: i put: ch.
-	                i <- i + 1
-	        ]
-        ].
-	^ result
-!
 COMMENT ---------- Dictionary ------------
 METHOD MetaDictionary
 new | newDict |
@@ -1568,6 +1555,45 @@ printString | count res |
 METHOD Dictionary
 add: anAssoc
 	self at: anAssoc key put: anAssoc value
+!
+COMMENT ---------- FlexArray ------------
+METHOD MetaFlexArray
+on: array | ret |
+    ret <- self new.
+    self in: ret at: 1 put: array.
+    self in: ret at: 2 put: 0.
+    ^ ret
+!
+METHOD FlexArray
+contents
+    ^ buffer from: 1 to: size
+!
+METHOD FlexArray
+do: aBlock
+    1 to: size do: [:i | aBlock value: (buffer at: i)]
+!
+METHOD FlexArray
+add: element | newbuf |
+    (size = buffer size) ifTrue: [
+        newbuf <- buffer class new: (1 max: 2 * size).
+        newbuf replaceFrom: 1 to: size with: buffer.
+        buffer <- newbuf
+    ].
+    size <- size + 1.
+    buffer at: size put: element
+!
+METHOD FlexArray
+joinStrings | length result i |
+        length <- 0.
+        self do: [:string | length <- length + string size].
+        result <- String new: length.
+        i <- 1.
+        self do: [:string |
+                length <- string size.
+                result replaceFrom: i to: (i + length - 1) with: string.
+                i <- i + length
+        ].
+	^ result
 !
 COMMENT ---------- Set ------------
 METHOD MetaSet
@@ -2358,17 +2384,15 @@ readChar	| c |
 	^ c
 !
 METHOD File
-readLine	| value  c nl |
+readLine	| value  c |
 	" read a line from input "
 	fileID isNil ifTrue: [ self error: 'cannot read from unopened file' ].
-	value <- ''.
-	nl <- Char newline.
+	value <- FlexArray on: (String new: 60).
 	[ c <- self doRead.
 	  c isNil ifTrue: [ ^ nil ].
-	  c <- Char new: c.
-	  c ~= nl ] whileTrue:
-		[ value <- value + c asString ].
-	^ value
+	  c ~= 10 "(newline)" ] whileTrue:
+		[ value add: (Char new: c) ].
+	^ value contents
 !
 METHOD File
 fileInDispatch: cmd | c |
@@ -2412,12 +2436,12 @@ methodCommand: classCmd | name aClass text line lines |
 	name <- self readLine asSymbol.
 	aClass <- globals at: name ifAbsent: [ ^ self error:
 		'unknown class name in file-in: ' + name printString ].
-	lines <- List new.
+	lines <- FlexArray on: (Array new).
 	[ line <- self readLine.
 	  line isNil ifTrue: [ ^ self error:
 		'unexpected end of input during fileIn' ].
 	  line ~= '!'] whileTrue: [ lines add: (line + String newline) ].
-	text <- lines reverse joinStrings.
+	text <- lines joinStrings.
 	classCmd
 		ifTrue: [ aClass addMethod: text ]
 		ifFalse: [ aClass class addMethod: text ]
@@ -3194,7 +3218,7 @@ genHigh: high low: low
 METHOD Encoder
 genCode: byte
 	index <- index + 1.
-	(index >= byteCodes size)
+	(index > byteCodes size)
 		ifTrue: [ self expandByteCodes].
 	byteCodes at: index put: byte.
 	^ index
@@ -3208,7 +3232,7 @@ genVal: byte
 METHOD Encoder
 expandByteCodes	| newarray size |
 	size <- byteCodes size.
-	newarray <- ByteArray new: size + 8.
+	newarray <- ByteArray new: (2 * (size + 1)).
 	1 to: size do: [:i | newarray at: i put: (byteCodes at: i)].
 	byteCodes <- newarray
 !
@@ -3229,7 +3253,8 @@ backUp
 !
 METHOD Encoder
 method: maxTemps class: c text: text
-	^ Method name: name byteCodes: byteCodes literals: literals
+	^ Method name: name byteCodes: (byteCodes from: 1 to: index)
+		literals: literals
 		stackSize: maxStack temporarySize: maxTemps class: c
 		text: text
 !
